@@ -1,0 +1,9 @@
+#Object files
+*.o
+
+#Text files
+*.txt
+
+#Misc. files
+*.out
+shell
