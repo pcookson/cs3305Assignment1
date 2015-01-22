@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "/home/patrick/School/cs3305/projects/cs3305shell/token.h"
+#include "token.h"
 
 #define HISTORY_SIZE 10
 #define HISTORY_LINE_LENGTH 80

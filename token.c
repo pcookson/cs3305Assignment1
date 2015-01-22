@@ -1,4 +1,4 @@
-#include "/home/patrick/School/cs3305/projects/cs3305shell/token.h"
+#include "token.h"
 
 int make_tokenlist(char *buf, char *tokens[])
 {
