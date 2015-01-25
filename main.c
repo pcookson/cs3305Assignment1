@@ -1,10 +1,22 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include "token.h"
 
 #define HISTORY_SIZE 10
 #define HISTORY_LINE_LENGTH 80
 #define HISTORY_FILE_NAME "command_history.txt"
+#define IN "<"
+#define OUT ">"
+#define PIPE "|"
+
+int array_size(char *tokens)
+{
+    return sizeof(tokens)/sizeof(tokens[0]);
+}
 
 int file_exists(const char *fname)
 {
@@ -23,6 +35,9 @@ int print_n_history(int arrayLength, int numHistory, FILE *file)
     char line[HISTORY_LINE_LENGTH];
     char *copyString;
     int index;
+
+
+
     for(index=0; index<arrayLength; index++)
     {
         fgets(line, HISTORY_LINE_LENGTH, file);
@@ -35,6 +50,55 @@ int print_n_history(int arrayLength, int numHistory, FILE *file)
     }
 }
 
+int handle_io(char *tokens[], int input_exists, int output_exists)
+{
+    pid_t pid;
+    int fd;
+    char *outputFile;
+    strncpy(outputFile, tokens[4], strlen(tokens[4])-1);
+
+    pid = fork();
+
+    if(pid<0)
+    {
+        perror("fork()");
+    }
+
+    if(pid>0)
+    {
+        //parent
+
+
+        wait(NULL);
+
+
+    }
+    else if(pid==0)
+    {
+        printf("in io child");
+        if(input_exists == 1)
+        {
+            fd = open(tokens[2], O_RDONLY, 0);
+            dup2(fd, STDIN_FILENO);
+            close(fd);
+        }
+
+        if(output_exists == 1)
+        {
+
+
+
+            fd = open(outputFile, O_WRONLY|O_CREAT|O_TRUNC, 0644);
+            dup2(fd, STDOUT_FILENO);
+            close(fd);
+        }
+
+        execlp(tokens[0], tokens[0], NULL);
+        perror("execlp");
+    }
+
+}
+
 int main()
 {
     char input_line[MAX], *tokens[CMD_MAX];
@@ -45,9 +109,17 @@ int main()
     char *historyString;
     FILE *historyFile;
 
+    int IN_exists;
+    int OUT_exists;
+    int PIPE_exists;
+
     //execution loop
     while(1)
     {
+        IN_exists = 0;
+        OUT_exists = 0;
+        PIPE_exists = 0;
+
         printf("patrick> ");
 
         if(fgets(input_line, MAX, stdin) != NULL)
@@ -64,6 +136,7 @@ int main()
             }
 
             n = make_tokenlist(input_line, tokens);
+
 
         }
         else
@@ -113,17 +186,35 @@ int main()
                     print_n_history(historyIndex, atoi(tokens[1]), historyFile);
                 }
 
-
-
-
             }
-            else if(strncmp(tokens[0], "history", 7) == 0 && n!=1)
-            {
-                printf("history take 0 parameters\n");
-                break;
-            }
+
         }
 
+        index=0;
+        while(tokens[index]!=NULL)
+        {
 
-    }
+            if(strcmp(tokens[index], OUT) == 0)
+            {
+                OUT_exists = 1;
+            }
+            else if(strcmp(tokens[index], IN) == 0)
+            {
+                IN_exists = 1;
+
+            }
+            else if(tokens[index] == PIPE)
+            {
+                PIPE_exists = 1;
+            }
+            index++;
+        }
+
+        if(OUT_exists == 1 && IN_exists == 1 && PIPE_exists == 0)
+        {
+
+            handle_io(tokens, IN_exists, OUT_exists);
+        }
+
+    }//endwhile
 }
