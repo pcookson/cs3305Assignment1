@@ -165,7 +165,7 @@ int main()
         printf("%s> ", username);
         //char* inp = fgets(input_line, MAX, stdin);
         if(fgets(input_line, MAX, stdin) != NULL)
-        //if(strlen(input_line) != 0 || inp != NULL)
+            //if(strlen(input_line) != 0 || inp != NULL)
         {
             if((historyString = strdup(input_line))!=NULL)
             {
@@ -233,37 +233,45 @@ int main()
             }
 
         }
-
-        if(n != 0)
+        else
         {
-            index=0;
-            while(tokens[index]!=NULL)
+
+            if(n != 0)
             {
-
-                if(strcmp(tokens[index], OUT) == 0)
+                index=0;
+                while(tokens[index]!=NULL)
                 {
-                    OUT_exists = 1;
+
+                    if(strcmp(tokens[index], OUT) == 0)
+                    {
+                        OUT_exists = 1;
+                    }
+                    else if(strcmp(tokens[index], IN) == 0)
+                    {
+                        IN_exists = 1;
+
+                    }
+                    else if(strcmp(tokens[index], PIPE) == 0 )
+                    {
+                        printf("Pipe exists\n");
+                        PIPE_exists = 1;
+                    }
+                    index++;
                 }
-                else if(strcmp(tokens[index], IN) == 0)
+
+                if(OUT_exists == 1 || IN_exists == 1 && PIPE_exists == 0)
                 {
-                    IN_exists = 1;
 
+                    handle_io(tokens, IN_exists, OUT_exists);
                 }
-                else if(tokens[index] == PIPE)
+                else if(PIPE_exists == 1)
                 {
-                    PIPE_exists = 1;
+
                 }
-                index++;
-            }
-
-            if(OUT_exists == 1 || IN_exists == 1 && PIPE_exists == 0)
-            {
-
-                handle_io(tokens, IN_exists, OUT_exists);
-            }
-            else
-            {
-                execute_binary(tokens, index);
+                else
+                {
+                    execute_binary(tokens, index);
+                }
             }
         }
 
