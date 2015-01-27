@@ -64,6 +64,7 @@ int handle_io(char *tokens[], int input_exists, int output_exists)
     if(pid<0)
     {
         perror("fork()");
+        exit(-1);
     }
 
     if(pid>0)
@@ -95,6 +96,7 @@ int handle_io(char *tokens[], int input_exists, int output_exists)
 
         execlp(tokens[0], tokens[0], NULL);
         perror("execlp");
+        exit(-1);
     }
 
 }
@@ -109,6 +111,7 @@ int execute_binary(char *tokens[], int tokenSize)
     if(pid<0)
     {
         perror("fork()");
+        exit(-1);
     }
 
     if(pid>0)
