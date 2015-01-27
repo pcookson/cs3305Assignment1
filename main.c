@@ -119,6 +119,7 @@ int execute_binary(char *tokens[], int tokenSize)
         wait(NULL);
 
 
+
     }
     else if(pid==0)
     {
@@ -129,6 +130,8 @@ int execute_binary(char *tokens[], int tokenSize)
 
         execvp(tokens[0], tokens);
         perror("execvp");
+        exit(-1);
+
     }
 }
 
@@ -154,6 +157,7 @@ int main()
         IN_exists = 0;
         OUT_exists = 0;
         PIPE_exists = 0;
+
 
         printf("%s> ", username);
         //char* inp = fgets(input_line, MAX, stdin);
@@ -182,7 +186,7 @@ int main()
 
         if(strncmp(tokens[0], "exit", 4) == 0 && n==1)
         {
-            //printf("in exit if\n");
+            printf("in exit if\n");
             remove(HISTORY_FILE_NAME);
             return 0;
 
@@ -261,4 +265,5 @@ int main()
         }
 
     }//endwhile
+    return 0;
 }
