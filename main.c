@@ -140,7 +140,8 @@ int execute_one_pipe(char *tokens[], int pipe_location, int token_size)
     int fd[2];
 
 
-    for(index = 0;index<pipe_location;++index){
+    for(index = 0; index<pipe_location; ++index)
+    {
         tempString = strdup(tokens[index]);
 
         strcat(tempString, "\0");
@@ -154,7 +155,8 @@ int execute_one_pipe(char *tokens[], int pipe_location, int token_size)
     printf("index after first loop is %d. Pipe location is %d\n", index, pipe_location);
 
     int second_index=0;
-    for(index = pipe_location+1; index < token_size; index++){
+    for(index = pipe_location+1; index < token_size; index++)
+    {
 
         tempString = strdup(tokens[index]);
         printf("in second loop %s\n", tempString);
@@ -172,22 +174,26 @@ int execute_one_pipe(char *tokens[], int pipe_location, int token_size)
 
 
     wait(50);
-    if(pipe(fd)<0){
+    if(pipe(fd)<0)
+    {
         perror("error with pipe");
         exit(1);
     }
 
 
     pid = fork();
-    if(pid < 0){
-     perror("fork error");
-     exit(1);
+    if(pid < 0)
+    {
+        perror("fork error");
+        exit(1);
     }
 
-    if(pid > 0){//parent
+    if(pid > 0) //parent
+    {
 
         close(fd[1]);
-        if(dup2(fd[0],STDIN_FILENO)<0){
+        if(dup2(fd[0],STDIN_FILENO)<0)
+        {
             perror("dup2 error");
             exit(1);
         }
@@ -198,10 +204,13 @@ int execute_one_pipe(char *tokens[], int pipe_location, int token_size)
         perror("second");
         exit(1);
 
-    }else{
+    }
+    else
+    {
         printf("in child");
         close(fd[0]);
-        if(dup2(fd[1], STDOUT_FILENO)<0){
+        if(dup2(fd[1], STDOUT_FILENO)<0)
+        {
             perror("dup2 error");
             exit(1);
         }
@@ -215,8 +224,143 @@ int execute_one_pipe(char *tokens[], int pipe_location, int token_size)
 
 }
 
-int execute_two_pipes()
+int execute_two_pipes(char *tokens[], int first_pipe_location, int second_pipe_location, int token_size)
 {
+    char *first_binary[first_pipe_location];
+    char *second_binary[token_size-1-first_pipe_location];
+    char *third_binary[token_size - 1 - second_pipe_location];
+    char *tempString;
+
+    int fd[4];
+
+    int index;
+    pid_t pid;
+
+
+
+    for(index = 0; index<first_pipe_location; ++index)
+    {
+        tempString = strdup(tokens[index]);
+
+        strcat(tempString, "\0");
+        //printf("%s\n", tempString);
+        //strcpy(first_binary[index], tokens[index]);
+        first_binary[index] = tempString;
+        //printf(tempString);
+        //printf("%s\n", first_binary[index]);
+    }
+    first_binary[first_pipe_location] = NULL;
+
+
+    int second_index=0;
+    for(index = first_pipe_location+1; index < second_pipe_location; ++index)
+    {
+
+        tempString = strdup(tokens[index]);
+
+        strcat(tempString, "\0");
+        second_binary[second_index] = tempString;
+        second_index++;
+
+    }
+    second_binary[second_index] = NULL;
+
+    int third_index = 0;
+    for(index = second_pipe_location+1; index < token_size; ++index)
+    {
+
+        tempString = strdup(tokens[index]);
+
+        strcat(tempString, "\0");
+        third_binary[third_index] = tempString;
+        third_index++;
+
+    }
+    third_binary[third_index] = NULL;
+
+    //first_binary[0] = "ps";
+    //second_binary[0] = "sort";
+
+
+    pipe(fd);
+    pipe(fd+2);
+
+
+
+
+
+
+    if(fork() == 0)
+    {
+
+
+        dup2(fd[1],STDOUT_FILENO);
+
+        close(fd[0]);
+        close(fd[1]);
+        close(fd[2]);
+        close(fd[3]);
+
+        execvp(first_binary[0], first_binary);
+
+        perror("first");
+        exit(1);
+
+    }
+    else  //fork second child
+    {
+
+
+
+
+        if(fork() == 0)
+        {
+            dup2(fd[0], STDIN_FILENO);
+
+
+            dup2(fd[3], STDOUT_FILENO);
+
+            close(fd[0]);
+            close(fd[1]);
+            close(fd[2]);
+            close(fd[3]);
+
+            execvp(second_binary[0], second_binary);
+            perror("second");
+            exit(1);
+        }
+        else   //fork second child
+        {
+
+
+
+
+            if(fork() == 0)
+            {
+                dup2(fd[2], STDIN_FILENO);
+
+                close(fd[0]);
+                close(fd[1]);
+                close(fd[2]);
+                close(fd[3]);
+
+                execvp(third_binary[0], third_binary);
+                perror("third");
+                exit(1);
+            }
+        }
+    }
+    //parent
+    close(fd[0]);
+    close(fd[1]);
+    close(fd[2]);
+    close(fd[3]);
+    int childIndex;
+    for(childIndex=0; childIndex<3; childIndex++)
+    {
+        wait(NULL);
+    }
+
 }
 
 int execute_three_pipes()
@@ -386,19 +530,27 @@ int main()
                         pid_t pid;
                         pid = fork();
 
-                        if(pid < 0){
+                        if(pid < 0)
+                        {
                             perror("fork error");
                         }
 
-                        if(pid>0){
+                        if(pid>0)
+                        {
                             wait(NULL);
-                        }else{
-                        execute_one_pipe(tokens, first_pipe_location, index);
+                        }
+                        else
+                        {
+                            execute_one_pipe(tokens, first_pipe_location, index);
                         }
                     }
                     else if(number_of_pipes == 2)
                     {
-                        //execute_two_pipes();
+
+                            execute_two_pipes(tokens, first_pipe_location, second_pipe_location, index);
+
+
+
                     }
                     else if(number_of_pipes ==3)
                     {
