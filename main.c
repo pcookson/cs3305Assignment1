@@ -50,15 +50,11 @@ int print_n_history(int arrayLength, int numHistory, FILE *file)
     }
 }
 
-int handle_io(char *tokens[], int input_exists, int output_exists)
+int handle_io(char *tokens[], int input_exists, int output_exists
+              ,int input_token_location, int output_token_location)
 {
     pid_t pid;
     int fd;
-    //char *outputFile;
-    //strncpy(tokens[4], tokens[4], strlen(tokens[4])-2);
-    //strcat(tokens[4], "\0");
-    //printf("%s", outputFile);
-    printf("%s", tokens[4]);
     pid = fork();
 
     if(pid<0)
@@ -79,7 +75,7 @@ int handle_io(char *tokens[], int input_exists, int output_exists)
     {
         if(input_exists == 1)
         {
-            fd = open(tokens[2], O_RDONLY, 0);
+            fd = open(tokens[input_token_location], O_RDONLY, 0);
             dup2(fd, STDIN_FILENO);
             close(fd);
         }
@@ -88,8 +84,7 @@ int handle_io(char *tokens[], int input_exists, int output_exists)
         {
 
 
-
-            fd = open(tokens[4], O_WRONLY|O_CREAT|O_TRUNC, 0644);
+            fd = open(tokens[output_token_location], O_WRONLY|O_CREAT|O_TRUNC, 0644);
             dup2(fd, STDOUT_FILENO);
             close(fd);
         }
@@ -120,22 +115,112 @@ int execute_binary(char *tokens[], int tokenSize)
 
 
         wait(NULL);
+        return 0;
 
 
 
     }
     else if(pid==0)
     {
-        int index;
-        char *newTokens[tokenSize];
-
-
-
         execvp(tokens[0], tokens);
         perror("execvp");
         exit(-1);
 
     }
+}
+
+int execute_one_pipe(char *tokens[], int pipe_location, int token_size)
+{
+    char *first_binary[pipe_location];
+    char *second_binary[token_size-1-pipe_location];
+    char *tempString;
+
+    int index;
+    pid_t pid;
+    int fd[2];
+
+
+    for(index = 0;index<pipe_location;++index){
+        tempString = strdup(tokens[index]);
+
+        strcat(tempString, "\0");
+        //printf("%s\n", tempString);
+        //strcpy(first_binary[index], tokens[index]);
+        first_binary[index] = tempString;
+        //printf(tempString);
+        //printf("%s\n", first_binary[index]);
+    }
+    first_binary[pipe_location] = NULL;
+    printf("index after first loop is %d. Pipe location is %d\n", index, pipe_location);
+
+    int second_index=0;
+    for(index = pipe_location+1; index < token_size; index++){
+
+        tempString = strdup(tokens[index]);
+        printf("in second loop %s\n", tempString);
+        strcat(tempString, "\0");
+        second_binary[second_index] = tempString;
+        second_index++;
+        //printf("%s\n", second_binary[index]);
+    }
+    second_binary[second_index] = NULL;
+
+
+
+    //first_binary[0] = "ps";
+    //second_binary[0] = "sort";
+
+
+    wait(50);
+    if(pipe(fd)<0){
+        perror("error with pipe");
+        exit(1);
+    }
+
+
+    pid = fork();
+    if(pid < 0){
+     perror("fork error");
+     exit(1);
+    }
+
+    if(pid > 0){//parent
+
+        close(fd[1]);
+        if(dup2(fd[0],STDIN_FILENO)<0){
+            perror("dup2 error");
+            exit(1);
+        }
+        close(fd[0]);
+
+        execvp(second_binary[0], second_binary);
+
+        perror("second");
+        exit(1);
+
+    }else{
+        printf("in child");
+        close(fd[0]);
+        if(dup2(fd[1], STDOUT_FILENO)<0){
+            perror("dup2 error");
+            exit(1);
+        }
+        close(fd[1]);
+
+        execvp(first_binary[0], first_binary);
+
+        perror("first");
+        exit(1);
+    }
+
+}
+
+int execute_two_pipes()
+{
+}
+
+int execute_three_pipes()
+{
 }
 
 int main()
@@ -152,6 +237,13 @@ int main()
     int IN_exists;
     int OUT_exists;
     int PIPE_exists;
+    int input_token_location;
+    int output_token_location;
+
+    int number_of_pipes;
+    int first_pipe_location;
+    int second_pipe_location;
+    int third_pipe_location;
 
     username = getlogin();
     //execution loop
@@ -160,6 +252,9 @@ int main()
         IN_exists = 0;
         OUT_exists = 0;
         PIPE_exists = 0;
+        number_of_pipes = 0;
+        input_token_location = 0;
+        output_token_location = 0;
 
 
         printf("%s> ", username);
@@ -233,28 +328,48 @@ int main()
             }
 
         }
-        else
+
+        else//must be a shell command
         {
 
             if(n != 0)
             {
-                index=0;
+                index=0;//reset token index
                 while(tokens[index]!=NULL)
                 {
 
                     if(strcmp(tokens[index], OUT) == 0)
                     {
                         OUT_exists = 1;
+                        output_token_location = index + 1;
                     }
                     else if(strcmp(tokens[index], IN) == 0)
                     {
                         IN_exists = 1;
+                        input_token_location = index + 1;
 
                     }
                     else if(strcmp(tokens[index], PIPE) == 0 )
                     {
-                        printf("Pipe exists\n");
                         PIPE_exists = 1;
+                        number_of_pipes++;
+
+                        if(number_of_pipes == 1)
+                        {
+                            first_pipe_location = index;
+                        }
+                        else if(number_of_pipes == 2)
+                        {
+                            second_pipe_location = index;
+                        }
+                        else if(number_of_pipes == 3)
+                        {
+                            third_pipe_location == index;
+                        }
+                        else
+                        {
+                            perror("Number of pipes 0 or exceded");
+                        }
                     }
                     index++;
                 }
@@ -262,11 +377,37 @@ int main()
                 if(OUT_exists == 1 || IN_exists == 1 && PIPE_exists == 0)
                 {
 
-                    handle_io(tokens, IN_exists, OUT_exists);
+                    handle_io(tokens, IN_exists, OUT_exists,input_token_location, output_token_location);
                 }
                 else if(PIPE_exists == 1)
                 {
+                    if(number_of_pipes == 1)
+                    {
+                        pid_t pid;
+                        pid = fork();
 
+                        if(pid < 0){
+                            perror("fork error");
+                        }
+
+                        if(pid>0){
+                            wait(NULL);
+                        }else{
+                        execute_one_pipe(tokens, first_pipe_location, index);
+                        }
+                    }
+                    else if(number_of_pipes == 2)
+                    {
+                        //execute_two_pipes();
+                    }
+                    else if(number_of_pipes ==3)
+                    {
+                        //execute_three_pipes();
+                    }
+                    else
+                    {
+                        perror("pipe error");
+                    }
                 }
                 else
                 {
