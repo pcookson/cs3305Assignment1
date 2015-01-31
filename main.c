@@ -285,11 +285,6 @@ int execute_two_pipes(char *tokens[], int first_pipe_location, int second_pipe_l
     pipe(fd);
     pipe(fd+2);
 
-
-
-
-
-
     if(fork() == 0)
     {
 
@@ -363,8 +358,180 @@ int execute_two_pipes(char *tokens[], int first_pipe_location, int second_pipe_l
 
 }
 
-int execute_three_pipes()
+int execute_three_pipes(char *tokens[], int first_pipe_location, int second_pipe_location, int third_pipe_location, int token_size)
 {
+    char *first_binary[first_pipe_location];
+    char *second_binary[second_pipe_location-1 - first_pipe_location];
+    char *third_binary[third_pipe_location -1 - second_pipe_location];
+    char *fourth_binary[token_size - 1 - third_pipe_location];
+    char *tempString;
+
+    int fd[6];
+
+    int index;
+    pid_t pid;
+
+
+
+    for(index = 0; index<first_pipe_location; ++index)
+    {
+        tempString = strdup(tokens[index]);
+
+        strcat(tempString, "\0");
+        //printf("%s\n", tempString);
+        //strcpy(first_binary[index], tokens[index]);
+        first_binary[index] = tempString;
+
+        //printf("%s\n", first_binary[index]);
+    }
+    first_binary[first_pipe_location] = NULL;
+
+
+
+    int second_index=0;
+    for(index = first_pipe_location+1; index < second_pipe_location; ++index)
+    {
+
+        tempString = strdup(tokens[index]);
+
+        strcat(tempString, "\0");
+        second_binary[second_index] = tempString;
+        second_index++;
+
+    }
+    second_binary[second_index] = NULL;
+
+    int third_index = 0;
+    for(index = second_pipe_location+1; index < third_pipe_location; ++index)
+    {
+
+        tempString = strdup(tokens[index]);
+
+        strcat(tempString, "\0");
+        third_binary[third_index] = tempString;
+        third_index++;
+
+    }
+    third_binary[third_index] = NULL;
+
+    int fourth_index = 0;
+    for(index = third_pipe_location+1; index < token_size; ++index)
+    {
+
+        tempString = strdup(tokens[index]);
+
+        strcat(tempString, "\0");
+        fourth_binary[fourth_index] = tempString;
+        fourth_index++;
+
+    }
+    fourth_binary[fourth_index] = NULL;
+
+    //first_binary[0] = "ps";
+    //second_binary[0] = "sort";
+
+
+    pipe(fd);
+    pipe(fd+2);
+    pipe(fd+4);
+
+    if(fork() == 0)
+    {
+
+
+        dup2(fd[1],STDOUT_FILENO);
+
+        close(fd[0]);
+        close(fd[1]);
+        close(fd[2]);
+        close(fd[3]);
+        close(fd[4]);
+        close(fd[5]);
+
+        execvp(first_binary[0], first_binary);
+        perror("first");
+        exit(1);
+
+    }
+    else  //fork second child
+    {
+
+
+
+
+        if(fork() == 0)
+        {
+            dup2(fd[0], STDIN_FILENO);
+
+
+            dup2(fd[3], STDOUT_FILENO);
+
+            close(fd[0]);
+            close(fd[1]);
+            close(fd[2]);
+            close(fd[3]);
+            close(fd[4]);
+            close(fd[5]);
+
+            execvp(second_binary[0], second_binary);
+            perror("second");
+            exit(1);
+        }
+        else   //fork second child
+        {
+
+
+
+
+            if(fork() == 0)
+            {
+                dup2(fd[2], STDIN_FILENO);
+
+                dup2(fd[5], STDOUT_FILENO);
+
+                close(fd[0]);
+                close(fd[1]);
+                close(fd[2]);
+                close(fd[3]);
+                close(fd[4]);
+                close(fd[5]);
+
+                execvp(third_binary[0], third_binary);
+                perror("third");
+                exit(1);
+            }
+            else
+            {
+                if(fork() == 0)
+                {
+                    dup2(fd[4], STDIN_FILENO);
+
+                    close(fd[0]);
+                    close(fd[1]);
+                    close(fd[2]);
+                    close(fd[3]);
+                    close(fd[4]);
+                    close(fd[5]);
+
+                    execvp(fourth_binary[0], fourth_binary);
+                    perror("fourth");
+                    exit(1);
+                }
+            }
+        }
+    }
+    //parent
+    close(fd[0]);
+    close(fd[1]);
+    close(fd[2]);
+    close(fd[3]);
+    close(fd[4]);
+    close(fd[5]);
+    int childIndex;
+    for(childIndex=0; childIndex<4; childIndex++)
+    {
+        wait(NULL);
+    }
 }
 
 int main()
@@ -508,7 +675,8 @@ int main()
                         }
                         else if(number_of_pipes == 3)
                         {
-                            third_pipe_location == index;
+
+                            third_pipe_location = index;
                         }
                         else
                         {
@@ -547,15 +715,19 @@ int main()
                     else if(number_of_pipes == 2)
                     {
 
-                            execute_two_pipes(tokens, first_pipe_location, second_pipe_location, index);
+
+                        execute_two_pipes(tokens, first_pipe_location, second_pipe_location, index);
 
 
 
                     }
                     else if(number_of_pipes ==3)
                     {
-                        //execute_three_pipes();
+                        printf("%d %d %d\n", first_pipe_location, second_pipe_location, third_pipe_location);
+                        sleep(3);
+                        execute_three_pipes(tokens, first_pipe_location, second_pipe_location, third_pipe_location, index);
                     }
+
                     else
                     {
                         perror("pipe error");
