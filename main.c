@@ -145,11 +145,9 @@ int execute_one_pipe(char *tokens[], int pipe_location, int token_size)
         tempString = strdup(tokens[index]);
 
         strcat(tempString, "\0");
-        //printf("%s\n", tempString);
-        //strcpy(first_binary[index], tokens[index]);
+
         first_binary[index] = tempString;
-        //printf(tempString);
-        //printf("%s\n", first_binary[index]);
+
     }
     first_binary[pipe_location] = NULL;
     printf("index after first loop is %d. Pipe location is %d\n", index, pipe_location);
@@ -163,14 +161,8 @@ int execute_one_pipe(char *tokens[], int pipe_location, int token_size)
         strcat(tempString, "\0");
         second_binary[second_index] = tempString;
         second_index++;
-        //printf("%s\n", second_binary[index]);
     }
     second_binary[second_index] = NULL;
-
-
-
-    //first_binary[0] = "ps";
-    //second_binary[0] = "sort";
 
 
     wait(50);
@@ -243,11 +235,9 @@ int execute_two_pipes(char *tokens[], int first_pipe_location, int second_pipe_l
         tempString = strdup(tokens[index]);
 
         strcat(tempString, "\0");
-        //printf("%s\n", tempString);
-        //strcpy(first_binary[index], tokens[index]);
+
         first_binary[index] = tempString;
-        //printf(tempString);
-        //printf("%s\n", first_binary[index]);
+
     }
     first_binary[first_pipe_location] = NULL;
 
@@ -277,9 +267,6 @@ int execute_two_pipes(char *tokens[], int first_pipe_location, int second_pipe_l
 
     }
     third_binary[third_index] = NULL;
-
-    //first_binary[0] = "ps";
-    //second_binary[0] = "sort";
 
 
     pipe(fd);
@@ -557,6 +544,7 @@ int main()
     int third_pipe_location;
 
     username = getlogin();
+
     //execution loop
     while(1)
     {
@@ -569,9 +557,7 @@ int main()
 
 
         printf("%s> ", username);
-        //char* inp = fgets(input_line, MAX, stdin);
         if(fgets(input_line, MAX, stdin) != NULL)
-            //if(strlen(input_line) != 0 || inp != NULL)
         {
             if((historyString = strdup(input_line))!=NULL)
             {
@@ -595,7 +581,6 @@ int main()
 
         if(strncmp(tokens[0], "exit", 4) == 0 && n==1)
         {
-            printf("in exit if\n");
             remove(HISTORY_FILE_NAME);
             return 0;
 
@@ -605,6 +590,7 @@ int main()
             printf("'exit' takes 0 parameters\n");
 
         }
+        //if history command with no input
         else if(strncmp(tokens[0], "history", 7) == 0 && n==1)
         {
             historyFile = fopen(HISTORY_FILE_NAME, "rt");
@@ -620,6 +606,7 @@ int main()
             }
 
         }
+        //if history command with number
         else if(strncmp(tokens[0], "history", 7) == 0 && n==2)
         {
             if(file_exists(HISTORY_FILE_NAME))
