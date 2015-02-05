@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #define MAX 256
-#define CMD_MAX 10
+#define CMD_MAX 30
 
 
 int make_tokenlist(char *buf, char *tokens[]);

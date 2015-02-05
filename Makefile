@@ -1,10 +1,10 @@
 all: shell
 
-shell: main.o token.o
-	gcc main.o token.o -o shell
+shell: shell.o token.o
+	gcc shell.o token.o -o shell
 
-main.o: main.c
-	gcc -c -g main.c
+shell.o: shell.c
+	gcc -c -g shell.c
 
 token.o: token.c
 	gcc -c -g token.c
